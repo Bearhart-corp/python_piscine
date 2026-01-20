@@ -1,0 +1,11 @@
+def ft_harvest_total():
+    print("enter day 1")
+    day1 = int(input())
+    print("enter day 2")
+    day2 = int(input())
+    print("enter day 3")
+    day3 = int(input())
+    print(f'Day 1 harvest: {day1}')
+    print(f'Day 2 harvest: {day2}')
+    print(f'Day 3 harvest: {day3}')
+    print(f'total = {day1 + day2 + day3}')
