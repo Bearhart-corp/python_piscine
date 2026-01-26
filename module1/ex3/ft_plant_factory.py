@@ -9,9 +9,10 @@ class Plant:
 
 def rand_maison(seed, even: int) -> int:
     i = even
+    j = id(i) % 0x100
     even = not (even & 1)
-    seed = (((seed * 13 + i + 37 + even) ^ (0xa5 * even + i)) >> 1)
-    seed = ((seed ^ 0x5555 + 0x1111 - i + even) ^ 0x3333 + i)
+    seed = (((seed * 13 + i + 37 + even) ^ (0xa5 * even + i) ^ j) >> 1)
+    seed = ((seed ^ 0x5555 + 0x1111 - i + even) ^ 0x3333 + i) ^ j
     return seed % 200
 
 def is_unique(seen, i: int, seed: int, seed2: int)-> int:
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     seen = [[0] * 2 for _ in range(400)]
     i = 0
     seed = 0x15
-    seed2 = 0x17
+    seed2 = 0x18
     names = ["Acer", "Salvia", "Verbena", "Laurus", "Rubus", "Ulmus",
 "Juniperus", "Ficus", "Plantago", "Artemisia", "Quercus", "Betula",
 "Alnus", "Populus", "Fraxinus", "Malva", "Ruta", "Mentha", "Thymus", "Cistus"]
@@ -34,8 +35,6 @@ if __name__ == "__main__":
     for i in range(0, 100):
         seed = rand_maison(seed, i)
         seed2 = rand_maison(seed2, i)
-        seen[i][0] = 1 << (seed % len(names))
-        seen[i][1] = 1 << (seed2 % len(names))
         while is_unique(seen, i, seed % len(names), seed2 % len(names)) == False:
             seed = rand_maison(seed, i)
             seed2 = rand_maison(seed2, i)
