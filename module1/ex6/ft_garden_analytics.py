@@ -1,8 +1,25 @@
 class GardenManager:
     gardens = []
 
-    def __init__(self):
-        self.garden_stat = self.GardenStats
+    class GardenStats:
+        def __init__(self, gardens):
+            self.gardens = gardens
+
+        def count_plants(self):
+            count = 0
+            for garden in self.gardens:
+                count += len(garden.plants)
+            return count
+
+        def total_growth(self):
+            total = 0
+            for garden in self.gardens:
+                for plant in garden.plants:
+                    total += plant.height
+            return total
+
+        def died(self):
+            return [g for g in self.gardens if len(g.plants) == 0]
 
     @classmethod
     def add_garden(cls, name: str):
@@ -19,7 +36,7 @@ class GardenManager:
         for garden in cls.gardens:
             for plant in garden.plants:
                 if plant.water_reserves < plant.water_need:
-                    plant.water_reserves = Plant.max_water_cap
+                    plant.water_reserves = plant.max_water_cap
                     print(f"Watering {plant.name} in {garden.name}")
 
     @classmethod
@@ -41,7 +58,7 @@ class GardenManager:
             cls.daily_update_all()
 
     @classmethod
-    def generation_auto(cls, nbr_garden: int, nbr_plants: int):
+    def generation_auto(cls, nbr_garden: int, nbr_plants: list[int]):
         dico = []
         plants = []
         garden_names = ["Neo", "Morpheus", "Trinity", "Agent Smith",
@@ -64,50 +81,34 @@ class GardenManager:
                 garden.add_plant(plant)
 
     @classmethod
-    def simulator_auto(cls, nbr_days: int):
+    def simulator_auto(cls, nbr_days: int, gap: int):
         for i in range(nbr_days):
             print(f"\nDay Number {i} in the simulation ")
-            cls.display_all_garden()
+            if i % gap == 0:
+                cls.display_all_garden()
             cls.simulator(1)
             cls.water_auto()
 
     @classmethod
     def who_died(cls):
-        nobody = 0
+        nobody = True
+        stats = cls.GardenStats(cls.gardens)
+        dead_gardens = stats.died()
         for garden in cls.gardens:
-            if len(garden.plants) == 0:
-                nobody = 1
+            if garden in dead_gardens:
+                nobody = False
                 print(f"The {garden.name} quit the matrix")
-        if nobody == 0:
+            else:
+                print(f"The {garden.name} still in the matrix")
+        if nobody:
             print("Nobody died")
 
     @staticmethod
     def validate_height(height):
         print(f"Height validation test: {(height >= 0)}")
 
-    # class GardenStats:
-    #     def __init__(self, garden):
-    #         self.garden = garden
-
-    #     def count_plants(self):
-    #         return len(self.garden.plants)
-
-    #     def total_growth(self):
-    #         total = 0
-    #         for plant in self.garden.plants:
-    #             total += plant.height
-    #         return total
-
-    #     def type_breakdown(self):
-    #         res = {}
-    #         for plant in self.garden.plants:
-    #             t = type(plant).__name__
-    #             res[t] = res.get(t, 0) + 1
-    #         return res
-
 
 class Garden:
-
     def __init__(self, name: str):
         self.name = name
         self.plants = []
@@ -149,7 +150,11 @@ class Garden:
                 seed2 = Garden.rand_maison(seed2, i)
             seen[(seed % len_names) * len_names + (seed2 % len_names)] = 1
             name = names[seed % len_names] + " " + names[seed2 % len_names]
-            plants.append(Plant(name, seed % 10 + 1, seed2 % 10 + 1))
+            if not (i & 1):
+                plants.append(Plant(name, seed % 10 + 1, seed2 % 10 + 1))
+            else:
+                plants.append(PrizeFlower(name, seed % 10 + 1,
+                                          seed2 % 10 + 1, seed2 % 10))
         return plants
 
     def add_plant(self, plant):
@@ -160,6 +165,7 @@ class Garden:
         for p in self.plants:
             p.age += 1
             p.height += p.grow_cap
+            p.max_water_cap = 50 + (50 * int(p.height / 100))
             p.water_reserves -= p.water_need
             if p.water_reserves < 0 or (p.life_expectency - p.age) <= 0:
                 print(f"{p.name} from {self.name} is dead #snif")
@@ -169,62 +175,78 @@ class Garden:
 
 
 class Plant:
-    max_water_cap = 50
-
     def __init__(self, name: str, water_need: int, grow_cap: int):
         self.name = name
+        self.max_water_cap = 50
         self.water_need = water_need
         self.grow_cap = grow_cap
         self.age = 0
         self.height = 0
         self.water_reserves = 11
         self.life_expectency = 10 * water_need
+        self.not_flower = True
 
-    def display(self, block_width=40):
+    def display(self):
         label = ["Plant name", "Height", "Age",
-                 "Water Needs", "Growth Capacity", "Water Reserve"]
+                 "Water Needs", "Growth Capacity",
+                 "Water Reserve", "Color", "Points"]
 
-        print(f"{label[0]:{' '}<15}:{self.name}")
-        print(f"{label[1]:{' '}<15}:{self.height} cm")
-        print(f"{label[2]:{' '}<15}:{self.age} day{'s' * (self.age > 1)}")
-        print(f"{label[3]:{' '}<15}:{self.water_need}")
-        print(f"{label[4]:{' '}<15}:{self.grow_cap}")
-        print(f"{label[5]:{' '}<15}:{self.water_reserves}")
+        print(f"{label[0]:{' '}<20}:{self.name}")
+        print(f"{label[1]:{' '}<20}:{self.height} cm")
+        print(f"{label[2]:{' '}<20}:{self.age} day{'s' * (self.age > 1)}")
+        print(f"{label[3]:{' '}<20}:{self.water_need}")
+        print(f"{label[4]:{' '}<20}:{self.grow_cap}")
+        print(f"{label[5]:{' '}<20}:{self.water_reserves}")
+        if self.not_flower is False:
+            print(f"{label[6]:{' '}<20}:{self.color}")
+            print(f"{label[7]:{' '}<20}:{self.point}")
         print("-" * 40)
 
     def water_the_plant(self):
-        self.water_reserves = Plant.max_water_cap
+        self.water_reserves = self.max_water_cap
 
 
 class FloweringPlant(Plant):
-    def __init__(self, name: str, color: str) -> None:
-        super().__init__(name=name, )
-        self.color = color
+    def __init__(self, name: str, water_need: int, grow_cap: int,
+                 color: int) -> None:
+        super().__init__(name=name, water_need=water_need * 2,
+                         grow_cap=grow_cap / 2)
+        colors = ["Red", "Green", "Yellow", "Black", "Blue", "Gray", "Orange",
+                  "Purple", "Pink", "White"]
+        self.color = colors[color]
+        self.point = 0
+        self.not_flower = False
 
     def bloom(self):
         print(f"{self.name} is blooming beautifully!\n")
 
 
 class PrizeFlower(FloweringPlant):
-    def get_points(self):
-        return id(self.color) % 20
+    def __init__(self, name: str, water_need: int, grow_cap: int,
+                 color: int) -> None:
+        super().__init__(name=name, water_need=water_need * 2,
+                         grow_cap=grow_cap / 2, color=color)
+        self.point = id(self.color) % 20
 
 
 def main(nbr_garden: int, nbr_plants: list, nbr_day_in_the_matrix: int):
     total = 0
+    display_gap = int(1 + nbr_day_in_the_matrix // 10)
     if nbr_garden >= 20:
         return print("is it too much garden to handle for the matrix")
     for i in range(len(nbr_plants)):
         total += nbr_plants[i]
         if total >= 100:
             return print("is it too much plants to handle for the matrix")
-    nbr_day_2simulate = nbr_day_in_the_matrix
-
     GardenManager.generation_auto(nbr_garden, nbr_plants)
-    GardenManager.simulator_auto(nbr_day_2simulate)
+    GardenManager.simulator_auto(nbr_day_in_the_matrix, display_gap)
     GardenManager.who_died()
+    stats = GardenManager.GardenStats(GardenManager.gardens)
+    print(f"\nRemains: {stats.count_plants()}"
+          f" plant{'s' * (stats.count_plants() > 1)}\n"
+          f"Total grow: {stats.total_growth()}cm")
 
 
 if __name__ == "__main__":
-    plants_nbr = [5, 5, 5, 5]
-    main(len(plants_nbr), plants_nbr, 2)
+    plants_nbr = [5, 2, 1, 5]
+    main(len(plants_nbr), plants_nbr, 40)
