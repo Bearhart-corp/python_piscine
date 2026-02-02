@@ -1,0 +1,35 @@
+list = []
+dico = {}
+set = {}
+tuple = ()
+
+set et tuples sont des listes
+tuple est immuable
+set est sans doublons
+dico est une table de hash
+
+union |
+difference -
+intersection &
+symmetric_difference() ^ xor 
+
+https://www.w3schools.com/python/python_sets_methods.asp
+
+from abc import ABC, abstractmethod
+
+
+class carte(ABC):
+    @abstractmethod
+    def play():
+        pass
+
+class Valet(carte):
+    def play():
+
+
+
+
+liste_cards = []
+
+for c in liste_cards:
+    c.play()
