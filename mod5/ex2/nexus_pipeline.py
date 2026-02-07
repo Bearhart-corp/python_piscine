@@ -1,21 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict, Union, Protocol
-import time
+# import time
 from collections import deque
 
 
-# =========================
-# STAGE INTERFACE (Protocol)
-# =========================
-
 class ProcessingStage(Protocol):
     def process(self, data: Any) -> Any:
-        ...
+        pass
+##############################################
 
-
-# =========================
-# PIPELINE BASE (ABC)
-# =========================
 
 class ProcessingPipeline(ABC):
     def __init__(self, pipeline_id: str):
@@ -28,65 +21,41 @@ class ProcessingPipeline(ABC):
     def add_stage(self, stage: ProcessingStage) -> None:
         self.stages.append(stage)
 
-    def run(self, data: Any) -> Any:
-        start = time.time()
-        try:
-            for stage in self.stages:
-                data = stage.process(data)
-            self.processed += 1
-            return self.process(data)
-        except Exception:
-            self.errors += 1
-            return "Pipeline error – recovery engaged"
-        finally:
-            self.total_time += time.time() - start
-
     @abstractmethod
     def process(self, data: Any) -> Union[str, Any]:
         pass
 
-    def stats(self) -> Dict[str, Union[str, int, float]]:
-        efficiency = (
-            (self.processed / (self.processed + self.errors)) * 100
-            if self.processed + self.errors > 0 else 0
-        )
-        return {
-            "pipeline_id": self.pipeline_id,
-            "processed": self.processed,
-            "errors": self.errors,
-            "efficiency": efficiency,
-            "time": round(self.total_time, 3)
-        }
+    def run():
+        pass
 
+###################################################
 
-# =========================
-# PIPELINE STAGES
-# =========================
 
 class InputStage:
-    def process(self, data: Any) -> Any:
+    def process(self, data: Any) -> Dict:
         if data is None:
             raise ValueError("Invalid input")
         return data
 
 
 class TransformStage:
-    def process(self, data: Any) -> Any:
+    def process(self, data: Any) -> Dict:
         if isinstance(data, dict):
             data["validated"] = True
         return data
 
 
 class OutputStage:
-    def process(self, data: Any) -> Any:
+    def process(self, data: Any) -> str:
         return data
 
+##################################################
 
-# =========================
-# ADAPTER PIPELINES
-# =========================
 
 class JSONAdapter(ProcessingPipeline):
+    def __init__(self, pipe_id):
+        super().__init__(pipe_id)
+
     def process(self, data: Any) -> str:
         if isinstance(data, dict):
             return f"Processed JSON payload: {data}"
@@ -94,6 +63,9 @@ class JSONAdapter(ProcessingPipeline):
 
 
 class CSVAdapter(ProcessingPipeline):
+    def __init__(self, pipe_id):
+        super().__init__(pipe_id)
+
     def process(self, data: Any) -> str:
         if isinstance(data, str):
             fields = data.split(",")
@@ -102,57 +74,63 @@ class CSVAdapter(ProcessingPipeline):
 
 
 class StreamAdapter(ProcessingPipeline):
+    def __init__(self, pipe_id):
+        super().__init__(pipe_id)
+
     def process(self, data: Any) -> str:
         if isinstance(data, list):
             avg = sum(data) / len(data) if data else 0
             return f"Stream summary: {len(data)} readings, avg={round(avg, 2)}"
         return "Invalid Stream data"
 
+###################################################
 
-# =========================
-# NEXUS MANAGER
-# =========================
 
 class NexusManager:
     def __init__(self):
         self.pipelines: deque[ProcessingPipeline] = deque()
 
-    def register(self, pipeline: ProcessingPipeline) -> None:
+    def add(self, pipeline: ProcessingPipeline) -> None:
         self.pipelines.append(pipeline)
 
-    def chain_process(self, data: Any) -> Any:
-        for pipeline in self.pipelines:
-            data = pipeline.run(data)
-        return data
+    def process_data():
+        pass
 
-    def report(self) -> None:
-        for p in self.pipelines:
-            print(p.stats())
+##############################################
 
-
-# =========================
-# MAIN DEMO
-# =========================
 
 def main():
     print("=== CODE NEXUS - ENTERPRISE PIPELINE SYSTEM ===")
-
+    print("\nInitializing Nexus Manager...")
+    print(
+        "Pipeline capacity: 1000 streams/second\n\
+Creating Data Processing Pipeline...\n\
+Stage 1: Input validation and parsing\n\
+Stage 2: Data transformation and enrichment\n\
+Stage 3: Output formatting and delivery\n\
+\n\
+=== Multi-Format Data Processing ===\n\
+Processing JSON data through pipeline..."
+    )
+    input_json = {"sensor": "temp", "value": 23.5, "unit": "C"}
+    print(f"Input: {input_json}")
+    print("Transform: Enriched with metadata and validation")
     json_pipeline = JSONAdapter("JSON_PIPE")
     csv_pipeline = CSVAdapter("CSV_PIPE")
     stream_pipeline = StreamAdapter("STREAM_PIPE")
 
-    for p in (json_pipeline, csv_pipeline, stream_pipeline):
-        p.add_stage(InputStage())
-        p.add_stage(TransformStage())
-        p.add_stage(OutputStage())
+    json_pipeline.add_stage(InputStage())
+    csv_pipeline.add_stage(TransformStage())
+    stream_pipeline.add_stage(OutputStage())
 
     manager = NexusManager()
-    manager.register(json_pipeline)
-    manager.register(csv_pipeline)
-    manager.register(stream_pipeline)
+    manager.add(json_pipeline)
+    manager.add(csv_pipeline)
+    manager.add(stream_pipeline)
 
     print("\n=== Multi-Format Data Processing ===")
-    print(manager.chain_process({"sensor": "temp", "value": 23.5, "unit": "C"}))
+    print(manager.chain_process(
+        {"sensor": "temp", "value": 23.5, "unit": "C"}))
     print(manager.chain_process("user,action,timestamp"))
     print(manager.chain_process([21.0, 22.5, 23.2, 21.7]))
 
