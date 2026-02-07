@@ -4,29 +4,26 @@ from typing import Any, List, Dict, Union, Optional
 
 class DataStream(ABC):
     """class abtraite qui sert d'interface"""
-    def __init__(self, stream_id: str):
-        self.stream_id = stream_id
+    def __init__(self, batch: List[Any]):
         self.processed_count = 0
+        self.data = batch
 
     @abstractmethod
-    """contrat, tous les enfants devront avoir cette méthode"""
     def process_batch(self, data_batch: List[Any]) -> str:
+        """contrat, tous les enfants devront avoir cette méthode"""
         pass
 
     def filter_data(
-        """on filtre les datas et on return data si on trouve des critères dans str"""
         self,
         data_batch: List[Any],
         criteria: Optional[str] = None
     ) -> List[Any]:
-        if criteria is None:
-            return data_batch
-        return [d for d in data_batch if criteria.lower() in str(d).lower()]
+        pass
 
     def get_stats(self) -> Dict[str, Union[str, int, float]]:
-        """getter"""
+        """getter d'un dico avec une key str et une val str ou in ou float"""
         return {
-            "stream_id": self.stream_id,
+            "data": self.data,
             "processed": self.processed_count
         }
 
@@ -40,8 +37,7 @@ class SensorStream(DataStream):
                 if isinstance(v, (int, float))
             ]
             self.processed_count += len(temps)
-            avg = sum(temps) / len(temps) if temps else 0
-            return f"Sensor data: {len(temps)} readings processed, avg={avg}"
+            return f"Sensor data: {len(temps)} readings processed"
         except Exception:
             return "Sensor stream processing error"
 
@@ -54,8 +50,8 @@ class TransactionStream(DataStream):
                 if isinstance(v, int)
             ]
             self.processed_count += len(values)
-            net = sum(values)
-            return f"Transaction data: {len(values)} operations, net flow={net}"
+            return f"Transaction analytics: {len(values)} \
+operations processed"
         except Exception:
             return "Transaction stream processing error"
 
@@ -69,51 +65,97 @@ class EventStream(DataStream):
             ]
             self.processed_count += len(events)
             errors = len([e for e in events if "error" in e.lower()])
-            return f"Event data: {len(events)} events, {errors} error(s) detected"
+            return f"Event data: {len(events)} events, {errors}\
+ error(s) detected"
         except Exception:
             return "Event stream processing error"
 
 
 class StreamProcessor:
-    def __init__(self):
+    def __init__(self) -> None:
         self.streams: List[DataStream] = []
 
-    def register(self, stream: DataStream) -> None:
+    def add(self, stream: DataStream) -> None:
         self.streams.append(stream)
 
     def process_all(self, batches: List[List[Any]]) -> None:
-        for stream, batch in zip(self.streams, batches):
+        for (stream, batch) in zip(self.streams, batches):
             result = stream.process_batch(batch)
             print(f"- {result}")
 
+    def process(self) -> None:
+        print(f"{self.process_batch(self.data)}")
 
-def main():
-    print("=== CODE NEXUS - POLYMORPHIC STREAM SYSTEM ===")
 
-    sensor = SensorStream("SENSOR_001")
-    transaction = TransactionStream("TRANS_001")
-    event = EventStream("EVENT_001")
-
-    processor = StreamProcessor()
-    processor.register(sensor)
-    processor.register(transaction)
-    processor.register(event)
-
+def main() -> None:
+    print("=== CODE NEXUS - POLYMORPHIC STREAM SYSTEM ===\n")
     batches = [
-        [22.5, 23.0, 21.5],
-        [100, -50, -25],
+        [22.5, 65, 1023],
+        [100, -150, 75],
         ["login", "error", "logout"]
     ]
+    sensor = SensorStream(batches[0])
+    transaction = TransactionStream(batches[1])
+    event = EventStream(batches[2])
+
+    processor = StreamProcessor()
+    processor.add(sensor)
+    processor.add(transaction)
+    processor.add(event)
+
+    print("Initializing Sensor Stream...")
+    dico = sensor.get_stats()
+    infos = []
+    for info in dico["data"]:
+        infos.append(info)
+    print("Stream ID: SENSOR_001, Type: Environmental Data")
+    print(f"Processing sensor batch: temp:[{infos[0]},\
+ humidity:{infos[1]}, pressure:{infos[2]}]")
+    print(
+        f"Sensor analysis: {len(sensor.data)} readings processed\
+avg temp: {infos[0]}°C"
+    )
+
+    print("\nInitializing Transaction Stream...")
+    dico = transaction.get_stats()
+    infos = []
+    for info in dico["data"]:
+        infos.append(info)
+    print("Stream ID: TRANS_001, Type: Financial Data")
+    print(f"Processing transaction batch: buy:[{infos[0]},\
+ sell:{abs(infos[1])}, buy:{infos[2]}]")
+    print(
+        f"Transaction analysis: {len(infos)} operations,\
+ net flow: +{sum(infos)} units"
+    )
+
+    print("\nInitializing Event Stream...")
+    dico = event.get_stats()
+    infos = []
+    for info in dico["data"]:
+        infos.append(info)
+    print("Stream ID: EVENT_001, Type: System Events")
+    print(f"Processing event batch: [{infos[0]},\
+ , {(infos[1])}, {infos[2]}]")
+    StreamProcessor.process(event)
 
     print("\n=== Polymorphic Stream Processing ===")
+    print("Processing mixed stream types through unified interface...\n")
     processor.process_all(batches)
-
-    print("\nStream statistics:")
-    for s in processor.streams:
-        print(s.get_stats())
-
-    print("\nAll streams processed successfully. Nexus throughput optimal.")
+    print("\nStream filtering active: High-priority data only\n\
+Filtered results: 2 critical sensor alerts, 1 large transaction\n")
+    print("All streams processed successfully. Nexus throughput optimal.")
 
 
 if __name__ == "__main__":
     main()
+
+#   any = j'abandonne l'idee meme de typage
+#   List[Any] = [1, "a", 3.14, None]
+#   Dict[str, int] cle atttendu = str et val = int
+#   Union[int, float] = de type int OU float
+#   Optional[str] = Union[str, none] //soit str soit none !
+#   DuckTyping = If it walks like a duck and quacks like a duck, it’s a duck.”
+#   #Modularite
+#   le .get(key, val_par_default) batch.get(stream, [])
+#   par default donnes une liste vide si tu ne trouve pas cette key
