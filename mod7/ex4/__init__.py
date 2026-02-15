@@ -1,3 +1,3 @@
-from ex4.tournament import Tournament
+from ex4.TournamentCard import TournamentCard
 
-__all__ = ["Tournament"]
+__all__ = ["TournamentCard"]

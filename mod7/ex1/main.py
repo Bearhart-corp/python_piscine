@@ -1,34 +1,45 @@
-from ex0.Card import Card
-from ex0.Creature_card import CreatureCard
+from ex1.Deck import Deck
 from tools.card_generator import CardGenerator
+from typing import Any
+
+
+def draw_play(deck: Deck, game_state: dict[str, Any]) -> None:
+    """
+    :args = the Deck, the game state
+    :return None
+    :draw a card from the deck and play it
+    """
+    game_state["hand"].append(Deck.draw_card(deck))
+    print(f"Drew: {game_state['hand'][-1].name} \
+({game_state['hand'][-1].__class__.__name__})")
+    print(f"Play result: {game_state['hand'][-1].play(game_state)}\n")
 
 
 def main():
+    """
+    gen 10 cards, add in the deck, draw 1 ans play it
+    draw another and play it too
+    """
     game_state = {
         "available_mana": 6,
         "board": [],
         "hand": [],
         "opponent_board": []
     }
-    generator = CardGenerator()
-    data = generator.get_creature("Fire Dragon")
-    fire_dragon = CreatureCard(**data)
-    print("\n=== DataDeck Card Foundation ===\n")
-    print("Testing Abstract Base Class Design:\n")
-    print("CreatureCard Info:")
-    print(data)
-    data = generator.get_creature("Goblin Warrior")
-    gob = CreatureCard(**data)
-    print("\nPlaying Fire Dragon with 6 mana available:")
-    print(f"Playable: {Card.is_playable(fire_dragon,
-                                        game_state["available_mana"])}")
-    print(f"Play result: {fire_dragon.play(game_state)}")
-    print("\nFire Dragon attacks Goblin Warrior:")
-    print(f"Attack result: {fire_dragon.attack_target(gob)}")
-    print("\nTesting insufficient mana (3 available):")
-    print(f"Playable: {Card.is_playable(fire_dragon,
-                                        game_state["available_mana"])}")
-    print("\nAbstract pattern successfully demonstrated!")
+    print("\n=== DataDeck Deck Builder ===\n")
+    print("Building deck with different card types...")
+    gen = CardGenerator()
+    deck = Deck()
+    data_deck = gen.generate_random_deck(10)
+    for data in data_deck:
+        deck.add_card(data)
+    # {print(f"{card.name}", end=", ") for card in deck.cards}
+    print(f"\nDeck stats: {Deck.get_deck_stats(deck)}")
+    print("\nDrawing and playing cards:\n")
+    draw_play(deck, game_state)
+    draw_play(deck, game_state)
+    print('Polymorphism in action: Same interface,\
+ different card behaviors!')
 
 
 if __name__ == "__main__":

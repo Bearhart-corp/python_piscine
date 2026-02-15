@@ -1,3 +1,3 @@
-from ex3.game_engine import GameEngine
+from ex3.GameEngine import GameEngine
 
 __all__ = ["GameEngine"]
